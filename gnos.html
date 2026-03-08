@@ -24,6 +24,21 @@
       --border: rgba(110,130,170,0.25);
       --glow: 0 0 36px rgba(255,46,85,0.38);
       --radius: 20px;
+      /* enable scrolling in the game list */
+.app-grid-container {
+  overflow-y: auto;
+  height: 100%;
+}
+
+/* allow launcher content to scroll if needed */
+.launcher-content {
+  overflow: hidden;
+}
+
+/* ensure the game grid area fills space */
+.app-grid {
+  min-height: 100%;
+}
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     html, body { height:100%; font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); overflow:hidden; touch-action:manipulation; }
