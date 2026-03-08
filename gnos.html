@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #080c12;
+      --bg: #000814;
       --surface: #0d141f;
       --surface-h: #172233;
       --text: #e9f1ff;
@@ -27,8 +27,35 @@
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     html, body { height:100%; font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); overflow:hidden; touch-action:manipulation; }
-    #login-screen, #desktop, #launcher { position:fixed; inset:0; }
-    #desktop, #launcher { display:none; background:linear-gradient(145deg,#090f1a,#000); }
+    #login-screen, #desktop, #launcher, .settings-window { position:fixed; inset:0; }
+    #desktop {
+      display:none;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      transition: background 0.6s ease;
+    }
+    #desktop.default-bg {
+      background: 
+        radial-gradient(circle at 10% 20%, rgba(255,46,85,0.08) 0%, transparent 25%),
+        radial-gradient(circle at 90% 80%, rgba(109,40,217,0.06) 0%, transparent 30%),
+        linear-gradient(45deg, #000814 0%, #001233 100%);
+      background-attachment: fixed;
+    }
+    #desktop.default-bg::before {
+      content: "";
+      position: absolute; inset:0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,46,85,0.015) 2px, rgba(255,46,85,0.015) 4px);
+      pointer-events: none;
+      animation: glitch-bg 12s linear infinite;
+      opacity: 0.4;
+    }
+    @keyframes glitch-bg {
+      0%,100% { transform: translate(0,0); }
+      2%, 4% { transform: translate(1px, -1px); }
+      6%, 8% { transform: translate(-1px, 1px); }
+      10% { transform: translate(0,0); }
+    }
     .card {
       background:var(--glass); backdrop-filter:blur(28px) saturate(1.4);
       border:1px solid var(--border); border-radius:var(--radius);
@@ -44,12 +71,19 @@
              background:var(--primary); color:#fff; cursor:pointer; transition:0.28s; }
     button:hover { background:var(--primary-d); transform:translateY(-2px); box-shadow:0 8px 24px -8px rgba(201,30,63,0.5); }
     #statusbar {
-      position:fixed; top:0; left:0; right:0; height:40px; z-index:400;
-      background:rgba(8,12,18,0.94); backdrop-filter:blur(24px);
+      position:fixed; top:0; left:0; right:0; height:44px; z-index:400;
+      background:rgba(8,12,18,0.96); backdrop-filter:blur(24px);
       border-bottom:1px solid var(--border);
-      display:flex; align-items:center; padding:0 28px; font-size:14px;
+      display:flex; align-items:center; padding:0 16px; font-size:14px; font-weight:500;
     }
-    #clock { margin-left:auto; }
+    #status-left { flex:1; display:flex; align-items:center; }
+    #status-right { display:flex; align-items:center; gap:24px; }
+    .battery { display:flex; align-items:center; gap:6px; }
+    .battery-bar { width:48px; height:18px; border:2px solid var(--text-mute); border-radius:6px; position:relative; overflow:hidden; }
+    .battery-level { height:100%; background:linear-gradient(to right, #4ade80, #22c55e); transition:width 0.8s ease; }
+    .charging { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.7; } }
+    #clock { font-weight:600; min-width:60px; text-align:right; }
     #dock {
       position:fixed; bottom:32px; left:50%; transform:translateX(-50%);
       background:var(--glass); backdrop-filter:blur(32px);
@@ -247,13 +281,38 @@
       background:rgba(255,46,85,0.12); transition:0.2s;
     }
     .sidebar button:hover { background:rgba(255,46,85,0.3); }
+    .settings-window {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      width:92vw; max-width:900px; height:88vh; min-height:560px;
+      background:var(--glass); backdrop-filter:blur(22px);
+      border:1px solid var(--border); border-radius:var(--radius);
+      box-shadow:var(--glow), 0 48px 120px -40px #000;
+      overflow:hidden; display:flex; flex-direction:column; z-index:45;
+    }
+    .settings-content { flex:1; padding:32px; overflow-y:auto; }
+    .settings-section { margin-bottom:48px; }
+    .settings-section h3 { font-size:1.8rem; color:var(--primary); margin-bottom:1.5rem; }
+    .wallpaper-preview { width:100%; max-height:300px; object-fit:cover; border-radius:16px; margin:16px 0; border:1px solid var(--border); background:#000; }
+    .clear-btn, .reset-btn { background:#ef4444; margin-top:12px; }
+    .clear-btn:hover, .reset-btn:hover { background:#dc2626; }
   </style>
 </head>
 <body>
 <div id="statusbar">
-  <span>GN-OS • 26.03</span>
-  <span id="clock"></span>
+  <div id="status-left">
+    <span>GN-OS • 26.03</span>
+  </div>
+  <div id="status-right">
+    <div class="battery">
+      <span id="battery-percent">–</span>
+      <div class="battery-bar">
+        <div id="battery-level" class="battery-level" style="width:0%"></div>
+      </div>
+    </div>
+    <span id="clock"></span>
+  </div>
 </div>
+
 <div id="login-screen">
   <div class="card">
     <h1>create account</h1>
@@ -262,9 +321,11 @@
     <button onclick="createAccount()">create & continue</button>
   </div>
 </div>
-<div id="desktop">
+
+<div id="desktop" class="default-bg">
   <div id="dock"></div>
 </div>
+
 <div id="launcher">
   <div class="launcher-panel">
     <div class="launcher-header">
@@ -280,6 +341,41 @@
           <div style="grid-column:1/-1;text-align:center;padding:6rem 0;color:var(--text-mute);">loading zones...</div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="settings-window" id="settings-window">
+  <div class="titlebar">
+    <div class="titlebar-title">settings</div>
+    <button class="titlebar-btn" onclick="document.getElementById('settings-window').style.display='none'">×</button>
+  </div>
+  <div class="settings-content">
+    <div class="settings-section">
+      <h3>account</h3>
+      <p><strong>username:</strong> <span id="settings-username">–</span></p>
+      <p><strong>created:</strong> <span id="settings-created">–</span></p>
+      <p><strong>games installed:</strong> <span id="settings-installed">0</span></p>
+    </div>
+    <div class="settings-section">
+      <h3>wallpaper</h3>
+      <input type="text" id="wallpaper-url" placeholder="paste image url (jpg/png/gif/webp/...)" />
+      <button onclick="applyWallpaperUrl()">apply url</button>
+      <br><br>
+      <input type="file" id="wallpaper-file" accept="image/*" />
+      <button onclick="applyWallpaperFile()">apply uploaded file</button>
+      <br><br>
+      <img id="wallpaper-preview" class="wallpaper-preview" src="" alt="preview" style="display:none;">
+      <button class="clear-btn" onclick="clearWallpaper()">reset wallpaper only</button>
+    </div>
+    <div class="settings-section">
+      <h3>reset everything</h3>
+      <p style="color:#ff6b6b; margin-bottom:1rem;">this will wipe wallpaper, installed games, account — forces relogin</p>
+      <button class="reset-btn" onclick="if(confirm('nuke everything?')) {localStorage.clear(); location.reload();}">reset all data & reload</button>
+    </div>
+    <div class="settings-section">
+      <h3>system</h3>
+      <p><strong>battery api:</strong> <span id="battery-api-status">checking...</span></p>
     </div>
   </div>
 </div>
@@ -300,35 +396,117 @@ const dock = document.getElementById("dock");
 const storeGrid = document.getElementById("storeGrid");
 const storeSearch = document.getElementById("storeSearch");
 const clockEl = document.getElementById("clock");
+const batteryPercentEl = document.getElementById("battery-percent");
+const batteryLevelEl = document.getElementById("battery-level");
 
 setInterval(() => {
   clockEl.textContent = new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
 }, 1000);
 
-function createAccount() {
-  const user = document.getElementById("username").value.trim();
-  const pass = document.getElementById("password").value.trim();
-  if (user.length < 3 || pass.length < 4) return alert("username ≥3 chars\npassword ≥4 chars");
-  account = { username: user, created: Date.now() };
-  localStorage.setItem("gnos_account", JSON.stringify(account));
-  loginScreen.style.display = "none";
-  desktop.style.display = "block";
-  initOS();
-}
+// real battery
+async function updateRealBattery() {
+  const statusEl = document.getElementById("battery-api-status") || {textContent: "n/a"};
+  if (!navigator.getBattery) {
+    batteryPercentEl.textContent = "n/a";
+    batteryLevelEl.style.width = "0%";
+    batteryLevelEl.style.background = "#ef4444";
+    statusEl.textContent = "not supported";
+    return;
+  }
 
-async function initOS() {
   try {
-    const r = await fetch(zonesURL + "?t=" + Date.now());
-    if (!r.ok) throw new Error(r.status);
-    zones = await r.json();
-    zones[0].featured = true;
-    renderDock();
-    openLibraryTab("store"); // default to store view
-  } catch(e) {
-    storeGrid.innerHTML = `<div style="text-align:center;padding:8rem 0;color:#f87171;">zones fetch failed<br>${e.message}</div>`;
+    const battery = await navigator.getBattery();
+    statusEl.textContent = "active";
+
+    const update = () => {
+      const level = Math.round(battery.level * 100);
+      const charging = battery.charging;
+      batteryPercentEl.textContent = `${level}%${charging ? ' ⚡' : ''}`;
+      batteryLevelEl.style.width = `${level}%`;
+      if (charging) {
+        batteryLevelEl.style.background = 'linear-gradient(to right, #facc15, #eab308)';
+        batteryLevelEl.classList.add('charging');
+      } else if (level > 20) {
+        batteryLevelEl.style.background = 'linear-gradient(to right, #4ade80, #22c55e)';
+        batteryLevelEl.classList.remove('charging');
+      } else {
+        batteryLevelEl.style.background = 'linear-gradient(to right, #ef4444, #dc2626)';
+        batteryLevelEl.classList.remove('charging');
+      }
+    };
+
+    update();
+    battery.addEventListener('levelchange', update);
+    battery.addEventListener('chargingchange', update);
+  } catch (e) {
+    batteryPercentEl.textContent = "err";
+    batteryLevelEl.style.width = "0%";
+    batteryLevelEl.style.background = "#ef4444";
+    statusEl.textContent = "blocked / error";
+  }
+}
+updateRealBattery();
+
+// wallpaper
+function loadWallpaper() {
+  const wp = localStorage.getItem("gnos_wallpaper");
+  if (wp) {
+    desktop.style.backgroundImage = `url(${wp})`;
+    desktop.classList.remove("default-bg");
+  } else {
+    desktop.style.backgroundImage = "";
+    desktop.classList.add("default-bg");
   }
 }
 
+function applyWallpaperUrl() {
+  const url = document.getElementById("wallpaper-url").value.trim();
+  if (!url) return;
+  const preview = document.getElementById("wallpaper-preview");
+  preview.src = url;
+  preview.style.display = "block";
+  preview.onload = () => {
+    if (confirm("apply this wallpaper?")) {
+      localStorage.setItem("gnos_wallpaper", url);
+      loadWallpaper();
+    }
+  };
+  preview.onerror = () => alert("bad url / not an image");
+}
+
+function applyWallpaperFile() {
+  const file = document.getElementById("wallpaper-file").files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = e.target.result;
+    const preview = document.getElementById("wallpaper-preview");
+    preview.src = data;
+    preview.style.display = "block";
+    if (confirm("apply this wallpaper?")) {
+      localStorage.setItem("gnos_wallpaper", data);
+      loadWallpaper();
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearWallpaper() {
+  localStorage.removeItem("gnos_wallpaper");
+  loadWallpaper();
+  document.getElementById("wallpaper-preview").style.display = "none";
+  document.getElementById("wallpaper-url").value = "";
+}
+
+// settings
+function openSettings() {
+  document.getElementById("settings-username").textContent = account?.username || "–";
+  document.getElementById("settings-created").textContent = account ? new Date(account.created).toLocaleString() : "–";
+  document.getElementById("settings-installed").textContent = installed.length;
+  document.getElementById("settings-window").style.display = "flex";
+}
+
+// dock
 function renderDock() {
   dock.innerHTML = "";
   const storeItem = document.createElement("div");
@@ -337,6 +515,13 @@ function renderDock() {
   storeItem.innerHTML = `<img src="https://img.icons8.com/fluency/96/google-play.png"/>`;
   storeItem.onclick = () => openLibraryTab("store");
   dock.appendChild(storeItem);
+
+  const settingsItem = document.createElement("div");
+  settingsItem.className = "dock-item";
+  settingsItem.title = "Settings";
+  settingsItem.innerHTML = `<img src="https://img.icons8.com/fluency/96/settings.png"/>`;
+  settingsItem.onclick = openSettings;
+  dock.appendChild(settingsItem);
 
   installed.forEach(id => {
     const z = zones.find(z => z.id == id);
@@ -570,6 +755,31 @@ function downloadZone(src, name) {
 launcher.onclick = e => {
   if (e.target === launcher) launcher.style.display = "none";
 };
+
+async function initOS() {
+  try {
+    const r = await fetch(zonesURL + "?t=" + Date.now());
+    if (!r.ok) throw new Error(r.status);
+    zones = await r.json();
+    zones[0].featured = true;
+    renderDock();
+    openLibraryTab("store");
+  } catch(e) {
+    storeGrid.innerHTML = `<div style="text-align:center;padding:8rem 0;color:#f87171;">zones fetch failed<br>${e.message}</div>`;
+  }
+  loadWallpaper();
+}
+
+function createAccount() {
+  const user = document.getElementById("username").value.trim();
+  const pass = document.getElementById("password").value.trim();
+  if (user.length < 3 || pass.length < 4) return alert("username ≥3 chars\npassword ≥4 chars");
+  account = { username: user, created: Date.now() };
+  localStorage.setItem("gnos_account", JSON.stringify(account));
+  loginScreen.style.display = "none";
+  desktop.style.display = "block";
+  initOS();
+}
 
 if (account) {
   loginScreen.style.display = "none";
