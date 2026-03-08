@@ -24,25 +24,11 @@
       --border: rgba(110,130,170,0.25);
       --glow: 0 0 36px rgba(255,46,85,0.38);
       --radius: 20px;
-      /* enable scrolling in the game list */
-.app-grid-container {
-  overflow-y: auto;
-  height: 100%;
-}
-
-/* allow launcher content to scroll if needed */
-.launcher-content {
-  overflow: hidden;
-}
-
-/* ensure the game grid area fills space */
-.app-grid {
-  min-height: 100%;
-}
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     html, body { height:100%; font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); overflow:hidden; touch-action:manipulation; }
     #login-screen, #desktop, #launcher, .settings-window { position:fixed; inset:0; }
+    #login-screen { display:flex; align-items:center; justify-content:center; }
     #desktop {
       display:none;
       background-size: cover;
@@ -86,12 +72,12 @@
              background:var(--primary); color:#fff; cursor:pointer; transition:0.28s; }
     button:hover { background:var(--primary-d); transform:translateY(-2px); box-shadow:0 8px 24px -8px rgba(201,30,63,0.5); }
     #statusbar {
-      position:fixed; top:0; left:0; right:0; height:44px; z-index:400;
+      position:fixed; top:0; left:0; right:0; height:44px; z-index:600;
       background:rgba(8,12,18,0.96); backdrop-filter:blur(24px);
       border-bottom:1px solid var(--border);
       display:flex; align-items:center; padding:0 16px; font-size:14px; font-weight:500;
     }
-    #status-left { flex:1; display:flex; align-items:center; }
+    #status-left { flex:1; display:flex; gap:24px; align-items:center; }
     #status-right { display:flex; align-items:center; gap:24px; }
     .battery { display:flex; align-items:center; gap:6px; }
     .battery-bar { width:48px; height:18px; border:2px solid var(--text-mute); border-radius:6px; position:relative; overflow:hidden; }
@@ -99,13 +85,14 @@
     .charging { animation: pulse 2s infinite; }
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.7; } }
     #clock { font-weight:600; min-width:60px; text-align:right; }
+    #visitor-count { font-weight:500; color:var(--text-mute); }
     #dock {
       position:fixed; bottom:32px; left:50%; transform:translateX(-50%);
       background:var(--glass); backdrop-filter:blur(32px);
       border:1px solid var(--border); border-radius:36px;
       padding:16px 32px; display:flex; gap:24px;
       box-shadow:0 32px 64px -16px #000, var(--glow);
-      z-index:300;
+      z-index:500;
     }
     .dock-item {
       width:76px; height:76px; background:rgba(255,255,255,0.07);
@@ -120,7 +107,7 @@
       display:none;
       background:rgba(0,0,0,0.78);
       backdrop-filter:blur(10px);
-      z-index:350;
+      z-index:450;
       overflow:hidden;
     }
     .launcher-panel {
@@ -232,7 +219,7 @@
     .install-btn:hover:not(.installed) { background:var(--primary-d); transform:scale(1.04); }
     .installed { background:#059669; cursor:default; pointer-events:none; }
     .window {
-      position:absolute;
+      position:fixed;
       top:50%; left:50%;
       transform:translate(-50%,-50%);
       width:92vw; max-width:1440px;
@@ -265,19 +252,19 @@
       text-overflow:ellipsis;
     }
     .titlebar-btn {
-      width:44px; height:44px;
+      width:48px; height:48px;
       margin-left:12px;
       border-radius:50%;
       border:none;
-      background:rgba(255,255,255,0.08);
+      background:rgba(255,255,255,0.12);
       color:#fff;
-      font-size:18px;
+      font-size:20px;
       cursor:pointer;
       transition:0.2s;
     }
     .titlebar-btn:hover {
       background:var(--primary);
-      transform:scale(1.1);
+      transform:scale(1.15);
     }
     .content {
       flex:1;
@@ -297,12 +284,22 @@
     }
     .sidebar button:hover { background:rgba(255,46,85,0.3); }
     .settings-window {
-      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      position:fixed;
+      top:50%; left:50%;
+      transform:translate(-50%,-50%);
       width:92vw; max-width:900px; height:88vh; min-height:560px;
-      background:var(--glass); backdrop-filter:blur(22px);
-      border:1px solid var(--border); border-radius:var(--radius);
+      background:var(--glass);
+      backdrop-filter:blur(22px);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
       box-shadow:var(--glow), 0 48px 120px -40px #000;
-      overflow:hidden; display:flex; flex-direction:column; z-index:45;
+      overflow:hidden;
+      display:none;
+      flex-direction:column;
+      z-index:600;
+    }
+    .settings-backdrop {
+      position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:550; display:none;
     }
     .settings-content { flex:1; padding:32px; overflow-y:auto; }
     .settings-section { margin-bottom:48px; }
@@ -315,7 +312,8 @@
 <body>
 <div id="statusbar">
   <div id="status-left">
-    <span>GN-OS • 29.1</span>
+    <span>GN-OS • 32</span>
+    <span id="visitor-count">visitors: 1</span>
   </div>
   <div id="status-right">
     <div class="battery">
@@ -341,7 +339,7 @@
   <div id="dock"></div>
 </div>
 
-<div id="launcher">
+<div id="launcher" style="display:none;">
   <div class="launcher-panel">
     <div class="launcher-header">
       <h2>play store</h2>
@@ -349,32 +347,38 @@
     </div>
     <div class="launcher-content">
       <div class="sidebar">
-        <input type="text" class="search" placeholder="search games…" id="storeSearch"/>
+        <input type="text" class="search" placeholder="search..." id="storeSearch"/>
+        <div style="margin:2rem 0; display:flex; flex-direction:column; gap:12px;">
+          <button onclick="openLibraryTab('store')" style="background:var(--primary);">store</button>
+          <button onclick="openLibraryTab('apps')" style="background:rgba(255,46,85,0.12);">apps</button>
+          <button onclick="openLibraryTab('owned')" style="background:rgba(255,46,85,0.12);">owned games & apps</button>
+        </div>
       </div>
       <div class="app-grid-container">
         <div class="app-grid" id="storeGrid">
-          <div style="grid-column:1/-1;text-align:center;padding:6rem 0;color:var(--text-mute);">loading zones...</div>
+          <div style="grid-column:1/-1;text-align:center;padding:6rem 0;color:var(--text-mute);">loading...</div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<div class="settings-window" id="settings-window">
+<div class="settings-backdrop" id="settings-backdrop" onclick="document.getElementById('settings-window').style.display='none'; this.style.display='none';"></div>
+<div class="settings-window" id="settings-window" style="display:none;">
   <div class="titlebar">
     <div class="titlebar-title">settings</div>
-    <button class="titlebar-btn" onclick="document.getElementById('settings-window').style.display='none'">×</button>
+    <button class="titlebar-btn" onclick="document.getElementById('settings-window').style.display='none'; document.getElementById('settings-backdrop').style.display='none';">×</button>
   </div>
   <div class="settings-content">
     <div class="settings-section">
       <h3>account</h3>
       <p><strong>username:</strong> <span id="settings-username">–</span></p>
       <p><strong>created:</strong> <span id="settings-created">–</span></p>
-      <p><strong>games installed:</strong> <span id="settings-installed">0</span></p>
+      <p><strong>items installed:</strong> <span id="settings-installed">0</span></p>
     </div>
     <div class="settings-section">
       <h3>wallpaper</h3>
-      <input type="text" id="wallpaper-url" placeholder="paste image url (jpg/png/gif/webp/...)" />
+      <input type="text" id="wallpaper-url" placeholder="paste image url..." />
       <button onclick="applyWallpaperUrl()">apply url</button>
       <br><br>
       <input type="file" id="wallpaper-file" accept="image/*" />
@@ -385,7 +389,7 @@
     </div>
     <div class="settings-section">
       <h3>reset everything</h3>
-      <p style="color:#ff6b6b; margin-bottom:1rem;">this will wipe wallpaper, installed games, account — forces relogin</p>
+      <p style="color:#ff6b6b; margin-bottom:1rem;">wipe wallpaper, installed items, account</p>
       <button class="reset-btn" onclick="if(confirm('nuke everything?')) {localStorage.clear(); location.reload();}">reset all data & reload</button>
     </div>
     <div class="settings-section">
@@ -399,9 +403,30 @@
 const zonesURL = "https://cdn.jsdelivr.net/gh/gn-math/assets@latest/zones.json";
 const coverBase = "https://cdn.jsdelivr.net/gh/gn-math/covers@main";
 const htmlBase = "https://cdn.jsdelivr.net/gh/gn-math/html@main";
+const placeholderCover = "https://via.placeholder.com/110x110/1a1a2e/ffffff?text=App";
+
+// your custom apps (iframes) - add more objects as needed
+const customApps = [
+  {
+    id: 1001,
+    name: "gn music",
+    cover: "https://via.placeholder.com/110x110/ff2e55/000?text=GN+Music",
+    url: "https://gn-music-mv4.caffeine.xyz/",
+    type: "app"
+  },
+  {
+    id: 1002,
+    name: "gn music 2",
+    cover: "https://via.placeholder.com/110x110/ff2e55/000?text=GN+Music+2",
+    url: "https://gn-music-mv4.caffeine.xyz/",
+    type: "app"
+  }
+  // add more here, e.g. { id: 1003, name: "something", cover: "...", url: "https://...", type: "app" }
+];
 
 let zones = [];
 let installed = JSON.parse(localStorage.getItem("gnos_installed") || "[]");
+let customInstalled = JSON.parse(localStorage.getItem("gnos_custom_installed") || "[]");
 let account = JSON.parse(localStorage.getItem("gnos_account") || "null");
 
 const loginScreen = document.getElementById("login-screen");
@@ -413,12 +438,19 @@ const storeSearch = document.getElementById("storeSearch");
 const clockEl = document.getElementById("clock");
 const batteryPercentEl = document.getElementById("battery-percent");
 const batteryLevelEl = document.getElementById("battery-level");
+const visitorEl = document.getElementById("visitor-count");
+
+// visitor counter
+let visitorCount = parseInt(localStorage.getItem("gnos_visitors") || "0");
+visitorCount++;
+localStorage.setItem("gnos_visitors", visitorCount);
+visitorEl.textContent = `visitors: ${visitorCount}`;
 
 setInterval(() => {
   clockEl.textContent = new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
 }, 1000);
 
-// real battery
+// real battery (unchanged)
 async function updateRealBattery() {
   const statusEl = document.getElementById("battery-api-status") || {textContent: "n/a"};
   if (!navigator.getBattery) {
@@ -462,7 +494,7 @@ async function updateRealBattery() {
 }
 updateRealBattery();
 
-// wallpaper
+// wallpaper (unchanged)
 function loadWallpaper() {
   const wp = localStorage.getItem("gnos_wallpaper");
   if (wp) {
@@ -481,12 +513,12 @@ function applyWallpaperUrl() {
   preview.src = url;
   preview.style.display = "block";
   preview.onload = () => {
-    if (confirm("apply this wallpaper?")) {
+    if (confirm("apply?")) {
       localStorage.setItem("gnos_wallpaper", url);
       loadWallpaper();
     }
   };
-  preview.onerror = () => alert("bad url / not an image");
+  preview.onerror = () => alert("bad url");
 }
 
 function applyWallpaperFile() {
@@ -498,7 +530,7 @@ function applyWallpaperFile() {
     const preview = document.getElementById("wallpaper-preview");
     preview.src = data;
     preview.style.display = "block";
-    if (confirm("apply this wallpaper?")) {
+    if (confirm("apply?")) {
       localStorage.setItem("gnos_wallpaper", data);
       loadWallpaper();
     }
@@ -517,8 +549,9 @@ function clearWallpaper() {
 function openSettings() {
   document.getElementById("settings-username").textContent = account?.username || "–";
   document.getElementById("settings-created").textContent = account ? new Date(account.created).toLocaleString() : "–";
-  document.getElementById("settings-installed").textContent = installed.length;
+  document.getElementById("settings-installed").textContent = installed.length + customInstalled.length;
   document.getElementById("settings-window").style.display = "flex";
+  document.getElementById("settings-backdrop").style.display = "block";
 }
 
 // dock
@@ -538,14 +571,27 @@ function renderDock() {
   settingsItem.onclick = openSettings;
   dock.appendChild(settingsItem);
 
+  // zones installed
   installed.forEach(id => {
     const z = zones.find(z => z.id == id);
     if (!z) return;
     const item = document.createElement("div");
     item.className = "dock-item";
     item.title = z.name;
-    item.innerHTML = `<img src="${z.cover.replace("{COVER_URL}", coverBase)}"/>`;
+    item.innerHTML = `<img src="${z.cover.replace("{COVER_URL}", coverBase) || placeholderCover}"/>`;
     item.onclick = () => openZone(z);
+    dock.appendChild(item);
+  });
+
+  // custom apps installed
+  customInstalled.forEach(id => {
+    const app = customApps.find(a => a.id == id);
+    if (!app) return;
+    const item = document.createElement("div");
+    item.className = "dock-item";
+    item.title = app.name;
+    item.innerHTML = `<img src="${app.cover || placeholderCover}"/>`;
+    item.onclick = () => openCustomApp(app);
     dock.appendChild(item);
   });
 }
@@ -560,7 +606,8 @@ function openLibraryTab(tab) {
     <input type="text" class="search" placeholder="search..." id="storeSearch"/>
     <div style="margin:2rem 0; display:flex; flex-direction:column; gap:12px;">
       <button onclick="openLibraryTab('store')" style="background:${tab==='store'?'var(--primary)':'rgba(255,46,85,0.12)'};">store</button>
-      <button onclick="openLibraryTab('library')" style="background:${tab==='library'?'var(--primary)':'rgba(255,46,85,0.12)'};">my games</button>
+      <button onclick="openLibraryTab('apps')" style="background:${tab==='apps'?'var(--primary)':'rgba(255,46,85,0.12)'};">apps</button>
+      <button onclick="openLibraryTab('owned')" style="background:${tab==='owned'?'var(--primary)':'rgba(255,46,85,0.12)'};">owned games & apps</button>
     </div>
   `;
 
@@ -572,12 +619,16 @@ function openLibraryTab(tab) {
     });
   };
 
-  if (tab === "library") renderMyGames();
+  if (tab === "apps") renderCustomApps();
+  else if (tab === "owned") renderOwned();
   else renderPlayStore();
 }
 
 function renderPlayStore() {
-  if (!zones.length) return;
+  if (!zones.length) {
+    storeGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:8rem 0;color:#f87171;">no zones loaded</div>`;
+    return;
+  }
   storeGrid.innerHTML = "";
   zones.forEach(z => {
     const card = document.createElement("div");
@@ -585,40 +636,68 @@ function renderPlayStore() {
     card.dataset.name = z.name.toLowerCase();
     const isInst = installed.includes(z.id);
     card.innerHTML = `
-      <img src="${z.cover.replace("{COVER_URL}", coverBase)}" loading="lazy"/>
+      <img src="${z.cover.replace("{COVER_URL}", coverBase) || placeholderCover}" loading="lazy" onerror="this.src='${placeholderCover}'"/>
       <span>${z.name}</span>
       ${isInst
         ? '<button class="install-btn installed">installed</button>'
         : '<button class="install-btn" onclick="installApp(' + z.id + ', event)">install</button>'}
     `;
     card.querySelector("button")?.addEventListener("click", e => e.stopPropagation());
-    card.addEventListener("click", () => { if (!installed.includes(z.id)) installApp(z.id, {stopPropagation:()=>0}); else openZone(z); });
+    card.addEventListener("click", () => { if (!isInst) installApp(z.id, {stopPropagation:()=>0}); else openZone(z); });
     storeGrid.appendChild(card);
   });
 }
 
-function renderMyGames() {
-  if (!zones.length) return;
+function renderCustomApps() {
   storeGrid.innerHTML = "";
-  const owned = zones.filter(z => installed.includes(z.id));
-  if (owned.length === 0) {
-    storeGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:8rem 0;color:var(--text-mute);">no games installed yet</div>`;
+  if (customApps.length === 0) {
+    storeGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:8rem 0;color:var(--text-mute);">no custom apps yet</div>`;
     return;
   }
-  owned.forEach(z => {
+  customApps.forEach(app => {
     const card = document.createElement("div");
     card.className = "app-card";
-    card.dataset.name = z.name.toLowerCase();
+    card.dataset.name = app.name.toLowerCase();
+    const isInst = customInstalled.includes(app.id);
     card.innerHTML = `
-      <img src="${z.cover.replace("{COVER_URL}", coverBase)}" loading="lazy"/>
-      <span>${z.name}</span>
+      <img src="${app.cover || placeholderCover}" loading="lazy" onerror="this.src='${placeholderCover}'"/>
+      <span>${app.name}</span>
+      ${isInst
+        ? '<button class="install-btn installed">installed</button>'
+        : '<button class="install-btn" onclick="installCustomApp(' + app.id + ', event)">install</button>'}
+    `;
+    card.querySelector("button")?.addEventListener("click", e => e.stopPropagation());
+    card.addEventListener("click", () => { if (!isInst) installCustomApp(app.id, {stopPropagation:()=>0}); else openCustomApp(app); });
+    storeGrid.appendChild(card);
+  });
+}
+
+function renderOwned() {
+  storeGrid.innerHTML = "";
+  const ownedZones = zones.filter(z => installed.includes(z.id));
+  const ownedCustom = customApps.filter(a => customInstalled.includes(a.id));
+  const owned = [...ownedZones, ...ownedCustom];
+  if (owned.length === 0) {
+    storeGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:8rem 0;color:var(--text-mute);">nothing owned yet</div>`;
+    return;
+  }
+  owned.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "app-card";
+    card.dataset.name = item.name.toLowerCase();
+    card.innerHTML = `
+      <img src="${item.cover.replace ? item.cover.replace("{COVER_URL}", coverBase) : item.cover || placeholderCover}" loading="lazy" onerror="this.src='${placeholderCover}'"/>
+      <span>${item.name}</span>
       <div style="display:flex; gap:12px; margin-top:12px;">
-        <button class="install-btn" style="flex:1; background:#3b82f6;" onclick="openZoneFromId(${z.id}, event)">play</button>
-        <button class="install-btn" style="flex:0 0 44px; background:#ef4444; padding:0;" onclick="uninstallApp(${z.id}, event)">🗑</button>
+        <button class="install-btn" style="flex:1; background:#3b82f6;" onclick="${item.url ? 'openCustomApp(' + item.id + ', event)' : 'openZoneFromId(' + item.id + ', event)'}">open</button>
+        <button class="install-btn" style="flex:0 0 44px; background:#ef4444; padding:0;" onclick="uninstallItem(${item.id}, '${item.type || "zone"}', event)">🗑</button>
       </div>
     `;
     card.addEventListener("click", e => {
-      if (e.target.tagName !== "BUTTON") openZone(z);
+      if (e.target.tagName !== "BUTTON") {
+        if (item.type === "app") openCustomApp(item);
+        else openZone(item);
+      }
     });
     storeGrid.appendChild(card);
   });
@@ -631,21 +710,68 @@ function installApp(id, e) {
     localStorage.setItem("gnos_installed", JSON.stringify(installed));
     renderDock();
     if (launcher.style.display === "flex") {
-      if (document.querySelector(".sidebar button[style*='var(--primary)']").textContent.toLowerCase().includes("store")) renderPlayStore();
-      else renderMyGames();
+      const activeBtn = document.querySelector(".sidebar button[style*='var(--primary)']");
+      const activeTab = activeBtn ? activeBtn.textContent.toLowerCase() : "";
+      if (activeTab.includes("store")) renderPlayStore();
+      else if (activeTab.includes("apps")) renderCustomApps();
+      else renderOwned();
     }
   }
 }
 
-function uninstallApp(id, e) {
+function installCustomApp(id, e) {
+  e?.stopPropagation?.();
+  if (!customInstalled.includes(id)) {
+    customInstalled.push(id);
+    localStorage.setItem("gnos_custom_installed", JSON.stringify(customInstalled));
+    renderDock();
+    if (launcher.style.display === "flex") {
+      const activeBtn = document.querySelector(".sidebar button[style*='var(--primary)']");
+      const activeTab = activeBtn ? activeBtn.textContent.toLowerCase() : "";
+      if (activeTab.includes("apps")) renderCustomApps();
+      else renderOwned();
+    }
+  }
+}
+
+function uninstallItem(id, type, e) {
   e.stopPropagation();
-  installed = installed.filter(x => x !== id);
-  localStorage.setItem("gnos_installed", JSON.stringify(installed));
+  if (type === "app") {
+    customInstalled = customInstalled.filter(x => x !== id);
+    localStorage.setItem("gnos_custom_installed", JSON.stringify(customInstalled));
+  } else {
+    installed = installed.filter(x => x !== id);
+    localStorage.setItem("gnos_installed", JSON.stringify(installed));
+  }
   renderDock();
   if (launcher.style.display === "flex") {
-    if (document.querySelector(".sidebar button[style*='var(--primary)']").textContent.toLowerCase().includes("my")) renderMyGames();
+    const activeBtn = document.querySelector(".sidebar button[style*='var(--primary)']");
+    const activeTab = activeBtn ? activeBtn.textContent.toLowerCase() : "";
+    if (activeTab.includes("owned")) renderOwned();
     renderPlayStore();
+    renderCustomApps();
   }
+}
+
+function openCustomApp(app) {
+  let win = document.querySelector(`.window[data-id="custom-${app.id}"]`);
+  if (win) return win.style.display = "flex";
+
+  win = document.createElement("div");
+  win.className = "window";
+  win.dataset.id = `custom-${app.id}`;
+
+  win.innerHTML = `
+    <div class="titlebar">
+      <div class="titlebar-title">${app.name}</div>
+      <button class="titlebar-btn" onclick="fullscreen(this)">⛶</button>
+      <button class="titlebar-btn" onclick="this.closest('.window').remove()">×</button>
+    </div>
+    <div class="content">
+      <iframe src="${app.url}" allowfullscreen></iframe>
+    </div>
+  `;
+  document.getElementById("desktop").appendChild(win);
 }
 
 function openZoneFromId(id, e) {
@@ -673,7 +799,6 @@ function openZone(zone) {
       <div class="titlebar-title">${zone.name}</div>
       ${isInternal ? `
         <button class="titlebar-btn" onclick="fullscreen(this)">⛶</button>
-        <button class="titlebar-btn" onclick="newTab('${gameUrl}')">↗</button>
         <button class="titlebar-btn" onclick="downloadZone('${gameUrl}', '${zone.name.replace(/'/g,"\\'")}')">↓</button>
       ` : ''}
       <button class="titlebar-btn" onclick="this.closest('.window').remove()">×</button>
@@ -743,14 +868,6 @@ function fullscreen(btn) {
   else if (iframe.mozRequestFullScreen) iframe.mozRequestFullScreen();
 }
 
-function newTab(src) {
-  const win = window.open("about:blank");
-  if (win) {
-    win.document.write(`<iframe src="${src}" style="width:100vw;height:100vh;border:none;" allowfullscreen></iframe>`);
-    win.document.close();
-  }
-}
-
 function downloadZone(src, name) {
   fetch(src)
     .then(r => r.blob())
@@ -778,9 +895,9 @@ async function initOS() {
     zones = await r.json();
     zones[0].featured = true;
     renderDock();
-    openLibraryTab("store");
   } catch(e) {
-    storeGrid.innerHTML = `<div style="text-align:center;padding:8rem 0;color:#f87171;">zones fetch failed<br>${e.message}</div>`;
+    console.error("zones fetch error:", e);
+    storeGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:8rem 0;color:#f87171;">zones fetch failed<br>${e.message}</div>`;
   }
   loadWallpaper();
 }
@@ -800,6 +917,8 @@ if (account) {
   loginScreen.style.display = "none";
   desktop.style.display = "block";
   initOS();
+} else {
+  loginScreen.style.display = "flex";
 }
 
 document.oncontextmenu = e => e.preventDefault();
