@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>GN-OS</title>
+  <base href="https://cdn.jsdelivr.net/gh/gn-math/gn-math-DONTDMCA@main/">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080c12;
+      --surface: #0d141f;
+      --surface-h: #172233;
+      --text: #e9f1ff;
+      --text-mute: #88a1c4;
+      --primary: #ff2e55;
+      --primary-d: #c91e3f;
+      --accent: #6d28d9;
+      --glass: rgba(18,26,42,0.82);
+      --glass-h: rgba(35,45,65,0.95);
+      --border: rgba(110,130,170,0.25);
+      --glow: 0 0 36px rgba(255,46,85,0.38);
+      --radius: 20px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body { height:100%; font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); overflow:hidden; touch-action:manipulation; }
+    #login-screen, #desktop, #launcher { position:fixed; inset:0; }
+    #desktop, #launcher { display:none; background:linear-gradient(145deg,#090f1a,#000); }
+    .card {
+      background:var(--glass); backdrop-filter:blur(28px) saturate(1.4);
+      border:1px solid var(--border); border-radius:var(--radius);
+      box-shadow:var(--glow), 0 28px 72px -20px #000;
+      padding:3.5rem 3rem; width:460px; max-width:94%;
+      text-align:center;
+    }
+    h1 { font-size:2.5rem; margin-bottom:2.2rem; color:var(--primary); font-weight:700; letter-spacing:-1px; }
+    input { width:100%; padding:16px 20px; margin:16px 0; border-radius:14px; border:1px solid var(--border);
+            background:var(--surface-h); color:var(--text); font-size:16px; outline:none; transition:0.22s; }
+    input:focus { border-color:var(--primary); box-shadow:0 0 0 5px rgba(255,46,85,0.22); }
+    button { width:100%; padding:16px; margin:16px 0; border:none; border-radius:14px; font-weight:600; font-size:16px;
+             background:var(--primary); color:#fff; cursor:pointer; transition:0.28s; }
+    button:hover { background:var(--primary-d); transform:translateY(-2px); box-shadow:0 8px 24px -8px rgba(201,30,63,0.5); }
+    #statusbar {
+      position:fixed; top:0; left:0; right:0; height:40px; z-index:400;
+      background:rgba(8,12,18,0.94); backdrop-filter:blur(24px);
+      border-bottom:1px solid var(--border);
+      display:flex; align-items:center; padding:0 28px; font-size:14px;
+    }
+    #clock { margin-left:auto; }
+    #dock {
+      position:fixed; bottom:32px; left:50%; transform:translateX(-50%);
+      background:var(--glass); backdrop-filter:blur(32px);
+      border:1px solid var(--border); border-radius:36px;
+      padding:16px 32px; display:flex; gap:24px;
+      box-shadow:0 32px 64px -16px #000, var(--glow);
+      z-index:300;
+    }
+    .dock-item {
+      width:76px; height:76px; background:rgba(255,255,255,0.07);
+      border-radius:24px; border:1px solid var(--border);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; transition:all 0.45s cubic-bezier(0.34,1.56,0.64,1);
+      overflow:hidden;
+    }
+    .dock-item:hover { transform:translateY(-24px) scale(1.24); box-shadow:0 28px 68px -14px rgba(255,46,85,0.6); border-color:var(--primary); }
+    .dock-item img { width:64px; height:64px; object-fit:contain; border-radius:20px; }
+    #launcher {
+      display:none;
+      background:rgba(0,0,0,0.78);
+      backdrop-filter:blur(10px);
+      z-index:350;
+      overflow:hidden;
+    }
+    .launcher-panel {
+      width:100%; height:100%;
+      display:flex;
+      flex-direction:column;
+      background:var(--surface);
+      overflow:hidden;
+    }
+    .launcher-header {
+      padding:20px 24px;
+      background:rgba(13,20,31,0.9);
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      flex-shrink:0;
+    }
+    .launcher-header h2 {
+      font-size:2.2rem;
+      font-weight:700;
+      color:var(--primary);
+      margin:0;
+    }
+    .close-btn {
+      width:44px; height:44px; border-radius:50%;
+      background:rgba(255,46,85,0.18);
+      border:none; color:#fff;
+      font-size:24px; cursor:pointer;
+      transition:0.25s;
+    }
+    .close-btn:hover { background:var(--primary); transform:scale(1.12); }
+    .launcher-content {
+      flex:1;
+      display:flex;
+      overflow:hidden;
+    }
+    .sidebar {
+      width:340px;
+      background:linear-gradient(to bottom,#0d141f,#090f1a);
+      padding:40px 36px;
+      border-right:1px solid var(--border);
+      flex-shrink:0;
+      overflow-y:auto;
+    }
+    .search {
+      width:100%; padding:18px 22px; border-radius:16px;
+      background:var(--surface-h); border:1px solid var(--border);
+      color:var(--text); font-size:16px; margin-bottom:2.8rem;
+      outline:none; transition:0.3s;
+    }
+    .search:focus {
+      border-color:var(--primary);
+      box-shadow:0 0 0 6px rgba(255,46,85,0.25), inset 0 0 12px rgba(255,46,85,0.15);
+      background:rgba(23,35,51,0.9);
+    }
+    .app-grid-container {
+      flex:1;
+      overflow-y:scroll;
+      padding:40px 48px 80px;
+      scrollbar-width:thin;
+      scrollbar-color: var(--primary) var(--surface-h);
+    }
+    .app-grid-container::-webkit-scrollbar {
+      width:8px;
+    }
+    .app-grid-container::-webkit-scrollbar-track {
+      background:var(--surface-h);
+      border-radius:10px;
+      box-shadow:inset 0 0 6px rgba(0,0,0,0.5);
+    }
+    .app-grid-container::-webkit-scrollbar-thumb {
+      background:var(--primary);
+      border-radius:10px;
+      box-shadow:0 0 10px var(--primary);
+    }
+    .app-grid-container::-webkit-scrollbar-thumb:hover {
+      background:var(--primary-d);
+    }
+    .app-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+      gap:40px;
+      align-content:start;
+    }
+    .app-card {
+      display:flex; flex-direction:column; align-items:center; gap:18px;
+      padding:28px 20px; border-radius:var(--radius);
+      background:rgba(255,255,255,0.045); border:1px solid transparent;
+      transition:0.38s ease; cursor:pointer; text-align:center;
+    }
+    .app-card:hover {
+      background:rgba(255,46,85,0.16);
+      border-color:var(--primary);
+      transform:translateY(-10px);
+      box-shadow:0 20px 48px -10px rgba(255,46,85,0.35);
+    }
+    .app-card img { width:110px; height:110px; border-radius:28px; object-fit:cover; }
+    .app-card span {
+      font-size:15.5px; line-height:1.4; font-weight:500;
+      max-width:100%; overflow:hidden; text-overflow:ellipsis;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    }
+    .install-btn {
+      margin-top:12px; padding:12px 28px; font-size:14px; border-radius:12px;
+      background:var(--primary); color:#fff; border:none; cursor:pointer; font-weight:600;
+      transition:0.25s;
+    }
+    .install-btn:hover:not(.installed) { background:var(--primary-d); transform:scale(1.04); }
+    .installed { background:#059669; cursor:default; pointer-events:none; }
+    .window {
+      position:absolute;
+      top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      width:92vw; max-width:1440px;
+      height:88vh; min-height:560px;
+      background:var(--glass);
+      backdrop-filter:blur(22px);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--glow), 0 48px 120px -40px #000;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      z-index:40;
+    }
+    .titlebar {
+      height:52px;
+      background:rgba(18,26,42,0.92);
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      padding:0 24px;
+      flex-shrink:0;
+    }
+    .titlebar-title {
+      flex:1;
+      font-weight:600;
+      font-size:15.5px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .titlebar-btn {
+      width:44px; height:44px;
+      margin-left:12px;
+      border-radius:50%;
+      border:none;
+      background:rgba(255,255,255,0.08);
+      color:#fff;
+      font-size:18px;
+      cursor:pointer;
+      transition:0.2s;
+    }
+    .titlebar-btn:hover {
+      background:var(--primary);
+      transform:scale(1.1);
+    }
+    .content {
+      flex:1;
+      overflow:hidden;
+      background:#000;
+    }
+    iframe {
+      width:100%;
+      height:100%;
+      border:none;
+      background:#000;
+    }
+    #launcher[style*="flex"] ~ #desktop { filter:blur(8px) brightness(0.68); }
+    .sidebar button {
+      width:100%; padding:14px; border-radius:12px; border:none; color:#fff; font-weight:600; cursor:pointer;
+      background:rgba(255,46,85,0.12); transition:0.2s;
+    }
+    .sidebar button:hover { background:rgba(255,46,85,0.3); }
+  </style>
+</head>
+<body>
+<div id="statusbar">
+  <span>GN-OS • 26.03</span>
+  <span id="clock"></span>
+</div>
+<div id="login-screen">
+  <div class="card">
+    <h1>create account</h1>
+    <input type="text" id="username" placeholder="username" autocomplete="off"/>
+    <input type="password" id="password" placeholder="password" autocomplete="new-password"/>
+    <button onclick="createAccount()">create & continue</button>
+  </div>
+</div>
+<div id="desktop">
+  <div id="dock"></div>
+</div>
+<div id="launcher">
+  <div class="launcher-panel">
+    <div class="launcher-header">
+      <h2>play store</h2>
+      <button class="close-btn" onclick="document.getElementById('launcher').style.display='none'">×</button>
+    </div>
+    <div class="launcher-content">
+      <div class="sidebar">
+        <input type="text" class="search" placeholder="search games…" id="storeSearch"/>
+      </div>
+      <div class="app-grid-container">
+        <div class="app-grid" id="storeGrid">
+          <div style="grid-column:1/-1;text-align:center;padding:6rem 0;color:var(--text-mute);">loading zones...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const zonesURL = "https://cdn.jsdelivr.net/gh/gn-math/assets@latest/zones.json";
+const coverBase = "https://cdn.jsdelivr.net/gh/gn-math/covers@main";
+const htmlBase = "https://cdn.jsdelivr.net/gh/gn-math/html@main";
+
+let zones = [];
+let installed = JSON.parse(localStorage.getItem("gnos_installed") || "[]");
+let account = JSON.parse(localStorage.getItem("gnos_account") || "null");
+
+const loginScreen = document.getElementById("login-screen");
+const desktop = document.getElementById("desktop");
+const launcher = document.getElementById("launcher");
+const dock = document.getElementById("dock");
+const storeGrid = document.getElementById("storeGrid");
+const storeSearch = document.getElementById("storeSearch");
+const clockEl = document.getElementById("clock");
+
+setInterval(() => {
+  clockEl.textContent = new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+}, 1000);
+
+function createAccount() {
+  const user = document.getElementById("username").value.trim();
+  const pass = document.getElementById("password").value.trim();
+  if (user.length < 3 || pass.length < 4) return alert("username ≥3 chars\npassword ≥4 chars");
+  account = { username: user, created: Date.now() };
+  localStorage.setItem("gnos_account", JSON.stringify(account));
+  loginScreen.style.display = "none";
+  desktop.style.display = "block";
+  initOS();
+}
+
+async function initOS() {
+  try {
+    const r = await fetch(zonesURL + "?t=" + Date.now());
+    if (!r.ok) throw new Error(r.status);
+    zones = await r.json();
+    zones[0].featured = true;
+    renderDock();
+    openLibraryTab("store"); // default to store view
+  } catch(e) {
+    storeGrid.innerHTML = `<div style="text-align:center;padding:8rem 0;color:#f87171;">zones fetch failed<br>${e.message}</div>`;
+  }
+}
+
+function renderDock() {
+  dock.innerHTML = "";
+  const storeItem = document.createElement("div");
+  storeItem.className = "dock-item";
+  storeItem.title = "Play Store";
+  storeItem.innerHTML = `<img src="https://img.icons8.com/fluency/96/google-play.png"/>`;
+  storeItem.onclick = () => openLibraryTab("store");
+  dock.appendChild(storeItem);
+
+  installed.forEach(id => {
+    const z = zones.find(z => z.id == id);
+    if (!z) return;
+    const item = document.createElement("div");
+    item.className = "dock-item";
+    item.title = z.name;
+    item.innerHTML = `<img src="${z.cover.replace("{COVER_URL}", coverBase)}"/>`;
+    item.onclick = () => openZone(z);
+    dock.appendChild(item);
+  });
+}
+
+function openLibraryTab(tab) {
+  launcher.style.display = "flex";
+  storeSearch.value = "";
+  storeSearch.focus();
+
+  const sidebar = document.querySelector(".sidebar");
+  sidebar.innerHTML = `
+    <input type="text" class="search" placeholder="search..." id="storeSearch"/>
+    <div style="margin:2rem 0; display:flex; flex-direction:column; gap:12px;">
+      <button onclick="openLibraryTab('store')" style="background:${tab==='store'?'var(--primary)':'rgba(255,46,85,0.12)'};">store</button>
+      <button onclick="openLibraryTab('library')" style="background:${tab==='library'?'var(--primary)':'rgba(255,46,85,0.12)'};">my games</button>
+    </div>
+  `;
+
+  document.getElementById("storeSearch").oninput = e => {
+    const q = e.target.value.toLowerCase().trim();
+    document.querySelectorAll(".app-card").forEach(c => {
+      const name = c.dataset.name || "";
+      c.style.display = name.includes(q) ? "flex" : "none";
+    });
+  };
+
+  if (tab === "library") renderMyGames();
+  else renderPlayStore();
+}
+
+function renderPlayStore() {
+  if (!zones.length) return;
+  storeGrid.innerHTML = "";
+  zones.forEach(z => {
+    const card = document.createElement("div");
+    card.className = "app-card";
+    card.dataset.name = z.name.toLowerCase();
+    const isInst = installed.includes(z.id);
+    card.innerHTML = `
+      <img src="${z.cover.replace("{COVER_URL}", coverBase)}" loading="lazy"/>
+      <span>${z.name}</span>
+      ${isInst
+        ? '<button class="install-btn installed">installed</button>'
+        : '<button class="install-btn" onclick="installApp(' + z.id + ', event)">install</button>'}
+    `;
+    card.querySelector("button")?.addEventListener("click", e => e.stopPropagation());
+    card.addEventListener("click", () => { if (!installed.includes(z.id)) installApp(z.id, {stopPropagation:()=>0}); else openZone(z); });
+    storeGrid.appendChild(card);
+  });
+}
+
+function renderMyGames() {
+  if (!zones.length) return;
+  storeGrid.innerHTML = "";
+  const owned = zones.filter(z => installed.includes(z.id));
+  if (owned.length === 0) {
+    storeGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:8rem 0;color:var(--text-mute);">no games installed yet</div>`;
+    return;
+  }
+  owned.forEach(z => {
+    const card = document.createElement("div");
+    card.className = "app-card";
+    card.dataset.name = z.name.toLowerCase();
+    card.innerHTML = `
+      <img src="${z.cover.replace("{COVER_URL}", coverBase)}" loading="lazy"/>
+      <span>${z.name}</span>
+      <div style="display:flex; gap:12px; margin-top:12px;">
+        <button class="install-btn" style="flex:1; background:#3b82f6;" onclick="openZoneFromId(${z.id}, event)">play</button>
+        <button class="install-btn" style="flex:0 0 44px; background:#ef4444; padding:0;" onclick="uninstallApp(${z.id}, event)">🗑</button>
+      </div>
+    `;
+    card.addEventListener("click", e => {
+      if (e.target.tagName !== "BUTTON") openZone(z);
+    });
+    storeGrid.appendChild(card);
+  });
+}
+
+function installApp(id, e) {
+  e?.stopPropagation?.();
+  if (!installed.includes(id)) {
+    installed.push(id);
+    localStorage.setItem("gnos_installed", JSON.stringify(installed));
+    renderDock();
+    if (launcher.style.display === "flex") {
+      if (document.querySelector(".sidebar button[style*='var(--primary)']").textContent.toLowerCase().includes("store")) renderPlayStore();
+      else renderMyGames();
+    }
+  }
+}
+
+function uninstallApp(id, e) {
+  e.stopPropagation();
+  installed = installed.filter(x => x !== id);
+  localStorage.setItem("gnos_installed", JSON.stringify(installed));
+  renderDock();
+  if (launcher.style.display === "flex") {
+    if (document.querySelector(".sidebar button[style*='var(--primary)']").textContent.toLowerCase().includes("my")) renderMyGames();
+    renderPlayStore();
+  }
+}
+
+function openZoneFromId(id, e) {
+  e.stopPropagation();
+  const z = zones.find(z => z.id == id);
+  if (z) openZone(z);
+}
+
+function openZone(zone) {
+  let win = document.querySelector(`.window[data-id="${zone.id}"]`);
+  if (win) return win.style.display = "flex";
+
+  win = document.createElement("div");
+  win.className = "window";
+  win.dataset.id = zone.id;
+
+  const isInternal = !zone.url.startsWith("http");
+  let gameUrl = zone.url;
+  if (isInternal) {
+    gameUrl = zone.url.replace("{HTML_URL}", htmlBase).replace("{COVER_URL}", coverBase) + "?t=" + Date.now();
+  }
+
+  win.innerHTML = `
+    <div class="titlebar">
+      <div class="titlebar-title">${zone.name}</div>
+      ${isInternal ? `
+        <button class="titlebar-btn" onclick="fullscreen(this)">⛶</button>
+        <button class="titlebar-btn" onclick="newTab('${gameUrl}')">↗</button>
+        <button class="titlebar-btn" onclick="downloadZone('${gameUrl}', '${zone.name.replace(/'/g,"\\'")}')">↓</button>
+      ` : ''}
+      <button class="titlebar-btn" onclick="this.closest('.window').remove()">×</button>
+    </div>
+    <div class="content" id="content-${zone.id}">
+      <div style="color:#fff;padding:3rem;text-align:center;">loading ${zone.name}...</div>
+    </div>
+  `;
+  document.getElementById("desktop").appendChild(win);
+
+  if (!isInternal) {
+    const iframe = document.createElement("iframe");
+    iframe.src = gameUrl;
+    iframe.allowFullscreen = true;
+    document.getElementById(`content-${zone.id}`).innerHTML = '';
+    document.getElementById(`content-${zone.id}`).appendChild(iframe);
+    return;
+  }
+
+  fetch(gameUrl)
+    .then(r => {
+      if (!r.ok) throw new Error(`fetch ${r.status}`);
+      return r.text();
+    })
+    .then(raw => {
+      let fixed = raw.trim();
+      if (!fixed.toLowerCase().includes('<!doctype') && !fixed.toLowerCase().includes('<html')) {
+        fixed = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="${htmlBase}/">
+  <title>${zone.name}</title>
+  <style>
+    body, html { margin:0; padding:0; height:100%; overflow:hidden; background:#000; color:#fff; font-family:sans-serif; }
+  </style>
+</head>
+<body>
+${fixed}
+</body>
+</html>`;
+      }
+      const blob = new Blob([fixed], {type: 'text/html'});
+      const url = URL.createObjectURL(blob);
+      const iframe = document.createElement("iframe");
+      iframe.src = url;
+      iframe.allowFullscreen = true;
+      document.getElementById(`content-${zone.id}`).innerHTML = '';
+      document.getElementById(`content-${zone.id}`).appendChild(iframe);
+
+      const cleanup = () => URL.revokeObjectURL(url);
+      win.addEventListener('DOMNodeRemoved', cleanup, {once: true});
+    })
+    .catch(e => {
+      document.getElementById(`content-${zone.id}`).innerHTML =
+        `<div style="color:#ff6b6b;padding:3rem;text-align:center;">
+           load failed – upstream repo broken<br>${e.message}
+         </div>`;
+    });
+}
+
+function fullscreen(btn) {
+  const iframe = btn.closest(".window").querySelector("iframe");
+  if (iframe.requestFullscreen) iframe.requestFullscreen();
+  else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+  else if (iframe.mozRequestFullScreen) iframe.mozRequestFullScreen();
+}
+
+function newTab(src) {
+  const win = window.open("about:blank");
+  if (win) {
+    win.document.write(`<iframe src="${src}" style="width:100vw;height:100vh;border:none;" allowfullscreen></iframe>`);
+    win.document.close();
+  }
+}
+
+function downloadZone(src, name) {
+  fetch(src)
+    .then(r => r.blob())
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name.replace(/[^a-z0-9]/gi, "_") + ".html";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    })
+    .catch(e => console.error("dl fail", e));
+}
+
+launcher.onclick = e => {
+  if (e.target === launcher) launcher.style.display = "none";
+};
+
+if (account) {
+  loginScreen.style.display = "none";
+  desktop.style.display = "block";
+  initOS();
+}
+
+document.oncontextmenu = e => e.preventDefault();
+</script>
+</body>
+</html>
