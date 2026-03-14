@@ -1,8 +1,8 @@
-# GN-OS
+# MathSt4rz
 GN OS its a web os kinda a$$ but ok for school its using gn math btw so credits to them
 
 
-# GN-OS
+# MathSt4rz
 
 fake cyberpunk os interface running entirely in your browser. play store for dumping html5 games/zones. install/uninstall from library. dock, windows, blur glass, red glow. zero backend. all localstorage.
 
